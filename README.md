@@ -28,6 +28,21 @@ http://localhost:5178
 - 生成 `codex-prompt.md`
 - 执行提示词会要求更细地拆解对标视频：内容模式、拍摄 POV、单人/双人对话、角色音色、互动轮次、镜头触发动作
 - 回到 Codex 说“执行”后读取最新任务解析
+- 解析完成后清理对标视频临时文件，只保留 metadata、首帧图、提示词和结果记录
+
+## 清理视频临时文件
+
+清理最新任务：
+
+```powershell
+& "C:\Users\hello\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" cleanup-job-media.js
+```
+
+清理指定任务：
+
+```powershell
+& "C:\Users\hello\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" cleanup-job-media.js 20260718T074139Z-uofk63
+```
 
 ## 当前边界
 
