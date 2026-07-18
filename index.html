@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TikTok 爆款视频 Codex 解析台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Codex-assisted TikTok remix</p>
+          <h1>TikTok 爆款视频 Codex 解析台</h1>
+          <p class="intro">
+            提供 TikTok 链接或上传对标视频，再上传产品首帧图。网页会把任务保存到 Codex 工作区，你回到 Codex 说“执行”，我就读取最新任务并解析生成 Grok JSON。
+          </p>
+        </div>
+        <div class="status-card" aria-label="工具状态">
+          <span class="status-dot"></span>
+          <span>本地联动模式：网页收素材，Codex 执行分析</span>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <form id="generator-form" class="panel input-panel">
+          <div class="panel-heading">
+            <h2>上传任务</h2>
+            <p>链接和视频二选一；产品类型、首帧图必填。</p>
+          </div>
+
+          <label class="field">
+            <span>TikTok 对标视频链接</span>
+            <input
+              id="tiktok-url"
+              type="url"
+              placeholder="https://www.tiktok.com/@creator/video/..."
+            />
+          </label>
+
+          <label class="field">
+            <span>对标视频文件</span>
+            <input id="reference-video" name="referenceVideo" type="file" accept="video/*" />
+          </label>
+
+          <p class="source-note">上面两项任选一个即可。如果两项都提供，Codex 会优先分析上传的视频文件，并把链接作为来源记录。</p>
+
+          <label class="field">
+            <span>产品类型</span>
+            <select id="product-type" required>
+              <option value="">请选择</option>
+              <option value="Dress">Dress</option>
+              <option value="Top">Top</option>
+              <option value="Cardigan">Cardigan</option>
+              <option value="Jacket">Jacket</option>
+              <option value="Pants">Pants</option>
+              <option value="Skirt">Skirt</option>
+              <option value="Two-piece Set">Two-piece Set</option>
+              <option value="Activewear">Activewear</option>
+              <option value="Outerwear">Outerwear</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label id="custom-type-wrap" class="field hidden">
+            <span>自定义产品类型</span>
+            <input id="custom-type" type="text" placeholder="例如: Knit Vest" />
+          </label>
+
+          <label class="field">
+            <span>产品首帧图</span>
+            <input id="first-frame" name="firstFrame" type="file" accept="image/*" required />
+          </label>
+
+          <div id="image-preview" class="image-preview">
+            <span>上传后这里会显示首帧图预览</span>
+          </div>
+
+          <label class="field">
+            <span>产品卖点，可选</span>
+            <textarea
+              id="selling-points"
+              rows="5"
+              placeholder="例如: flattering fit, soft fabric, not see-through, easy to style"
+            ></textarea>
+          </label>
+
+          <label class="field">
+            <span>目标视频时长</span>
+            <select id="duration">
+              <option value="8">8 秒</option>
+              <option value="10" selected>10 秒</option>
+              <option value="12">12 秒</option>
+              <option value="15">15 秒</option>
+            </select>
+          </label>
+
+          <button class="primary-button" type="submit">保存到 Codex 任务箱</button>
+        </form>
+
+        <section class="panel output-panel" aria-live="polite">
+          <div class="panel-heading">
+            <h2>任务状态</h2>
+            <p>保存成功后回到 Codex 说“执行”。</p>
+          </div>
+
+          <article id="job-result" class="job-card">
+            <h3>等待上传</h3>
+            <p>上传后会生成任务编号、文件保存位置和 Codex 执行提示词。</p>
+          </article>
+
+          <article class="json-card">
+            <div class="json-toolbar">
+              <h3>Codex 执行提示词</h3>
+              <button id="copy-json" class="ghost-button" type="button" disabled>复制</button>
+            </div>
+            <pre id="json-output">尚未生成任务。</pre>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
