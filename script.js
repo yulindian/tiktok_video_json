@@ -53,15 +53,24 @@ function buildClientPrompt(jobId) {
 - 产品首帧图：见该任务目录 metadata.json
 
 请你作为 TikTok 美国女装运营脚本分析师，完成：
-1. 分析对标视频的脚本结构、镜头节奏和口播/台词风格。
-2. 结合产品首帧图、产品类型和卖点，生成一个全新的英文 TikTok 女装视频脚本。
-3. 输出 Grok 可直接使用的 JSON。
+1. 分析对标视频的脚本结构、镜头节奏、拍摄视角、口播/台词风格。
+2. 先判断内容模式：单人口播、纯音乐走秀、双人对话、拍摄者采访模特、朋友视角互动、字幕驱动，或混合模式。
+3. 如果是双人/多人互动，必须拆出每个角色：拍摄者/提问者、模特/回应者、旁白等；分别描述音色、语速、情绪、口吻、说话功能和互动关系。
+4. 如果是手机拍摄者视角，必须拆出 POV：镜头是否代表拍摄者眼睛、模特是否看镜头、拍摄者是否在画外说话、互动动作如何触发产品展示。
+5. 结合产品首帧图、产品类型和卖点，生成一个全新的英文 TikTok 女装视频脚本。
+6. 输出 Grok 可直接使用的 JSON。
 
-要求：
-- 保留对标视频的爆款结构和节奏，但不要照抄原台词。
+JSON 要求：
+- 必须包含 product_type、first_frame_usage、selling_points、reference_video_breakdown、shot_sequence、voiceover、negative_prompt。
+- reference_video_breakdown 必须包含 content_mode、camera_pov、speaker_profiles、interaction_beats、dialogue_pattern、shot_pacing、portable_formula。
+- speaker_profiles 需要写明每个说话人的 role、voice_tone、pace、energy、speaking_function。
+- shot_sequence 如果有双人对话，每个镜头必须标出 speaker 和 line；不要只写一整段 voiceover。
+
+创作要求：
+- 保留对标视频的爆款结构、互动机制和节奏，但不要照抄原台词。
 - 台词用自然的美式英文。
-- JSON 必须包含 product_type、first_frame_usage、selling_points、reference_video_breakdown、shot_sequence、voiceover、negative_prompt。
-- 如果视频里没有清晰台词，请根据画面节奏推断适合的英文口播。`;
+- 如果视频里没有清晰台词，请根据画面节奏推断适合的英文口播；如果有双人互动，要生成双人自然对话。
+- 不要生成无法证明的夸张身材、医疗、永久效果或保证性承诺。`;
 }
 
 function renderJobSuccess(job) {
