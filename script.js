@@ -8,6 +8,8 @@ const firstFrameInput = document.querySelector("#first-frame");
 const imagePreview = document.querySelector("#image-preview");
 const sellingPointsInput = document.querySelector("#selling-points");
 const durationSelect = document.querySelector("#duration");
+const customDurationWrap = document.querySelector("#custom-duration-wrap");
+const customDurationInput = document.querySelector("#custom-duration");
 const jobResult = document.querySelector("#job-result");
 const promptOutput = document.querySelector("#json-output");
 const copyButton = document.querySelector("#copy-json");
@@ -28,6 +30,13 @@ function normalizeProductType() {
   return productTypeSelect.value;
 }
 
+function normalizeDuration() {
+  if (durationSelect.value === "custom") {
+    return customDurationInput.value.trim();
+  }
+  return durationSelect.value;
+}
+
 function hasReferenceSource() {
   return Boolean(tiktokUrlInput.value.trim() || referenceVideoInput.files?.[0]);
 }
@@ -36,7 +45,7 @@ function buildClientPrompt(jobId) {
   const productType = normalizeProductType();
   const sellingPoints = sellingPointsInput.value.trim() || "未填写，请根据产品类型和首帧图辅助识别。";
   const url = tiktokUrlInput.value.trim() || "未提供";
-  const duration = durationSelect.value;
+  const duration = normalizeDuration();
   const sourceMode = referenceVideoInput.files?.[0] ? "uploaded_video" : "tiktok_link";
 
   return `执行任务 ${jobId}
@@ -48,7 +57,7 @@ function buildClientPrompt(jobId) {
 - TikTok 对标链接：${url}
 - 产品类型：${productType}
 - 产品卖点：${sellingPoints}
-- 目标视频时长：${duration} 秒
+- 输出视频 JSON 时长：${duration} 秒
 - 对标视频文件：见该任务目录 metadata.json。如果为空，请根据 TikTok 链接尝试分析；如链接不可访问，请说明需要用户补充视频文件。
 - 产品首帧图：见该任务目录 metadata.json
 
@@ -58,13 +67,14 @@ function buildClientPrompt(jobId) {
 3. 如果是双人/多人互动，必须拆出每个角色：拍摄者/提问者、模特/回应者、旁白等；分别描述音色、语速、情绪、口吻、说话功能和互动关系。
 4. 如果是手机拍摄者视角，必须拆出 POV：镜头是否代表拍摄者眼睛、模特是否看镜头、拍摄者是否在画外说话、互动动作如何触发产品展示。
 5. 结合产品首帧图、产品类型和卖点，生成一个全新的英文 TikTok 女装视频脚本。
-6. 输出 Grok 可直接使用的 JSON。
+6. 输出 Grok 可直接使用的 JSON，duration_seconds 必须等于 ${duration}。
 
 JSON 要求：
 - 必须包含 product_type、first_frame_usage、selling_points、reference_video_breakdown、shot_sequence、voiceover、negative_prompt。
 - reference_video_breakdown 必须包含 content_mode、camera_pov、speaker_profiles、interaction_beats、dialogue_pattern、shot_pacing、portable_formula。
 - speaker_profiles 需要写明每个说话人的 role、voice_tone、pace、energy、speaking_function。
 - shot_sequence 如果有双人对话，每个镜头必须标出 speaker 和 line；不要只写一整段 voiceover。
+- shot_sequence 的时间段总长度必须匹配 ${duration} 秒，不要输出超出时长的镜头。
 
 创作要求：
 - 保留对标视频的爆款结构、互动机制和节奏，但不要照抄原台词。
@@ -84,17 +94,19 @@ function renderJobSuccess(job) {
     <p><strong>任务编号：</strong>${job.id}</p>
     <p><strong>保存目录：</strong>${job.relativePath}</p>
     <p><strong>对标来源：</strong>${job.sourceMode === "uploaded_video" ? "视频文件" : "TikTok 链接"}</p>
+    <p><strong>输出时长：</strong>${job.duration} 秒</p>
     <p>现在回到 Codex，发送：<code>执行</code> 或 <code>执行任务 ${job.id}</code>。</p>
   `;
 }
 
 async function saveJob() {
   const productType = normalizeProductType();
+  const duration = normalizeDuration();
   const formData = new FormData();
   formData.append("tiktokUrl", tiktokUrlInput.value.trim());
   formData.append("productType", productType);
   formData.append("sellingPoints", sellingPointsInput.value.trim());
-  formData.append("duration", durationSelect.value);
+  formData.append("duration", duration);
 
   if (referenceVideoInput.files?.[0]) {
     formData.append("referenceVideo", referenceVideoInput.files[0]);
@@ -121,6 +133,12 @@ productTypeSelect.addEventListener("change", () => {
   customTypeInput.required = isOther;
 });
 
+durationSelect.addEventListener("change", () => {
+  const isCustom = durationSelect.value === "custom";
+  customDurationWrap.classList.toggle("hidden", !isCustom);
+  customDurationInput.required = isCustom;
+});
+
 firstFrameInput.addEventListener("change", () => {
   const file = firstFrameInput.files?.[0];
 
@@ -139,6 +157,8 @@ firstFrameInput.addEventListener("change", () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const productType = normalizeProductType();
+  const duration = normalizeDuration();
+  const durationNumber = Number(duration);
 
   if (!hasReferenceSource()) {
     showToast("请填写 TikTok 链接或上传对标视频");
@@ -147,6 +167,11 @@ form.addEventListener("submit", async (event) => {
 
   if (!productType) {
     showToast("请先填写产品类型");
+    return;
+  }
+
+  if (!duration || !Number.isFinite(durationNumber) || durationNumber < 3 || durationNumber > 60) {
+    showToast("请填写 3 到 60 秒之间的视频时长");
     return;
   }
 

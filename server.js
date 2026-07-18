@@ -106,7 +106,7 @@ function buildPrompt(jobId, metadata) {
 - TikTok 对标链接：${metadata.tiktokUrl || "未提供"}
 - 产品类型：${metadata.productType}
 - 产品卖点：${metadata.sellingPoints || "未填写，请根据产品类型和首帧图辅助识别。"}
-- 目标视频时长：${metadata.duration} 秒
+- 输出视频 JSON 时长：${metadata.duration} 秒
 - 对标视频文件：${metadata.files.referenceVideo || "未上传"}
 - 产品首帧图：${metadata.files.firstFrame}
 
@@ -116,13 +116,14 @@ function buildPrompt(jobId, metadata) {
 3. 如果是双人/多人互动，必须拆出每个角色：拍摄者/提问者、模特/回应者、旁白等；分别描述音色、语速、情绪、口吻、说话功能和互动关系。
 4. 如果是手机拍摄者视角，必须拆出 POV：镜头是否代表拍摄者眼睛、模特是否看镜头、拍摄者是否在画外说话、互动动作如何触发产品展示。
 5. 结合产品首帧图、产品类型和卖点，生成一个全新的英文 TikTok 女装视频脚本。
-6. 输出 Grok 可直接使用的 JSON。
+6. 输出 Grok 可直接使用的 JSON，duration_seconds 必须等于 ${metadata.duration}。
 
 JSON 要求：
 - 必须包含 product_type、first_frame_usage、selling_points、reference_video_breakdown、shot_sequence、voiceover、negative_prompt。
 - reference_video_breakdown 必须包含 content_mode、camera_pov、speaker_profiles、interaction_beats、dialogue_pattern、shot_pacing、portable_formula。
 - speaker_profiles 需要写明每个说话人的 role、voice_tone、pace、energy、speaking_function。
 - shot_sequence 如果有双人对话，每个镜头必须标出 speaker 和 line；不要只写一整段 voiceover。
+- shot_sequence 的时间段总长度必须匹配 ${metadata.duration} 秒，不要输出超出时长的镜头。
 
 创作要求：
 - 如果有对标视频文件，优先分析视频文件；如果没有视频文件，请尝试根据 TikTok 链接分析。
@@ -148,10 +149,14 @@ async function handleCreateJob(req, res) {
   const { fields, files } = parseMultipart(buffer, contentType);
   const hasTiktokUrl = Boolean((fields.tiktokUrl || "").trim());
   const hasReferenceVideo = Boolean(files.referenceVideo);
+  const duration = Number(fields.duration || "10");
 
   if (!fields.productType) throw new Error("缺少产品类型。");
   if (!hasTiktokUrl && !hasReferenceVideo) throw new Error("请提供 TikTok 链接或上传对标视频文件。");
   if (!files.firstFrame) throw new Error("缺少产品首帧图。");
+  if (!Number.isFinite(duration) || duration < 3 || duration > 60) {
+    throw new Error("输出视频 JSON 时长必须是 3 到 60 秒之间的数字。");
+  }
 
   const jobId = createJobId();
   const jobsRoot = path.join(__dirname, "jobs");
@@ -174,7 +179,7 @@ async function handleCreateJob(req, res) {
     tiktokUrl: fields.tiktokUrl || "",
     productType: fields.productType,
     sellingPoints: fields.sellingPoints || "",
-    duration: fields.duration || "10",
+    duration: String(duration),
     files: {
       referenceVideo: referenceName,
       firstFrame: frameName,
@@ -186,7 +191,14 @@ async function handleCreateJob(req, res) {
   await writeFile(path.join(jobsRoot, "latest.txt"), jobId, "utf8");
 
   res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-  res.end(JSON.stringify({ id: jobId, relativePath: `jobs/${jobId}`, sourceMode: metadata.sourceMode }));
+  res.end(
+    JSON.stringify({
+      id: jobId,
+      relativePath: `jobs/${jobId}`,
+      sourceMode: metadata.sourceMode,
+      duration: metadata.duration,
+    }),
+  );
 }
 
 async function serveStatic(req, res) {

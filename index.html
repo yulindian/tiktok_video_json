@@ -86,13 +86,21 @@
           </label>
 
           <label class="field">
-            <span>目标视频时长</span>
+            <span>输出视频 JSON 时长</span>
             <select id="duration">
+              <option value="6">6 秒</option>
               <option value="8">8 秒</option>
               <option value="10" selected>10 秒</option>
               <option value="12">12 秒</option>
               <option value="15">15 秒</option>
+              <option value="20">20 秒</option>
+              <option value="custom">自定义</option>
             </select>
+          </label>
+
+          <label id="custom-duration-wrap" class="field hidden">
+            <span>自定义时长，单位秒</span>
+            <input id="custom-duration" type="number" min="3" max="60" step="1" placeholder="例如: 9" />
           </label>
 
           <button class="primary-button" type="submit">保存到 Codex 任务箱</button>
